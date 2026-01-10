@@ -1,0 +1,191 @@
+<div class="mx-help-doc">
+<h1>MCP-Server Help &amp; Architecture Guide</h1>
+<p>This document describes how the <strong>MCP Server</strong> in this repository (./mcp-server) works, how it communicates with the <strong>AI Agent</strong> and <strong>IBM Maximo</strong>, and how to use the <strong>MCP Server Observability UI</strong>.</p>
+<p>Repo context: the solution consists of <strong>two Nodes</strong> plus <strong>two   React UIs</strong>: - <strong>AI Agent</strong> (<code>./app</code>) — Agent server + chat UI</p>
+<p>- <strong>MCP Server</strong> (<code>./mcp-server</code>) — MCP endpoints + observability UI</p>
+<p>1. Architecture – How the MCP Works</p>
+<p>The MCP Server is a middleware service that:</p>
+<p>- Exposes Maximo capabilities to an AI Agent as <strong>MCP tools</strong></p>
+<p>- Translates tool calls into <strong>Maximo REST API</strong> requests</p>
+<p>- Normalizes Maximo responses into AI-friendly payloads</p>
+<p>- Captures <strong>logs, message history, and (optional) HTTP trace</strong> for observability - Supports <strong>multi-tenant configuration</strong> (tenant selected via tenant query/body)</p>
+<h3>1.1 High-level request flow</h3>
+<p>In this implementation, the AI Agent calls the MCP Server using:</p>
+<p><code>- GET /mcp/tools — discover tools</code></p>
+<p><code>- POST /mcp/call — execute a tool</code></p>
+<p>The MCP Server then calls Maximo under:</p>
+<p>- {MAXIMO_URL}/maximo/api/... (base URL is normalized in the server)</p>
+<p>2. Receiving a message from the AI Agent (tool calls)</p>
+<p><code>2.1 Tool discovery request (`GET /mcp/tools`)</code></p>
+<p>The AI Agent discovers tools by calling:</p>
+<p><code>- **Endpoint:** GET /mcp/tools</code></p>
+<p>- <strong>Tenant selection:</strong> ?tenant=&lt;tenantId&gt; (defaults to default)</p>
+<p>- <strong>Optional:</strong> ?all=1 to return all tools (including disabled ones, if supported by UI logic) - <strong>Optional metadata headers:</strong></p>
+<p>- x-ai-provider: &lt;provider&gt;</p>
+<p>- x-ai-model: &lt;model&gt;</p>
+<p>The MCP Server logs this as a rx_agent event.</p>
+<p><code>2.2 Tool execution request (`POST /mcp/call`)</code></p>
+<p>The AI Agent executes a tool by calling:</p>
+<p><code>- **Endpoint:** POST /mcp/call</code></p>
+<p>- <strong>Body fields used by the server:</strong></p>
+<p>- tenant (optional; falls back to ?tenant=; defaults to default)</p>
+<p>- name (or tool) — tool name</p>
+<p>- args — tool arguments (object)</p>
+<p>- meta.aiProvider / meta.aiModel (optional; can also come from headers)</p>
+<p><strong>Example request (simplified):</strong></p>
+<pre><code>{ </code></pre>
+<pre><code> &quot;tenant&quot;: &quot;default&quot;, </code></pre>
+<p>&quot;name&quot;: &quot;maximo.queryOS&quot;,</p>
+<pre><code> &quot;args&quot;: { </code></pre>
+<p>&quot;os&quot;: &quot;mxapiasset&quot;,</p>
+<p>&quot;where&quot;: &quot;siteid=\&quot;BEDFORD\&quot;&quot;,</p>
+<p>&quot;select&quot;: &quot;assetnum,description,status&quot;</p>
+<p>},</p>
+<p>&quot;meta&quot;: { &quot;aiProvider&quot;: &quot;openai&quot;, &quot;aiModel&quot;: &quot;gpt-5&quot; }</p>
+<p>}</p>
+<p>The MCP Server logs this as a rx_agent event, including the tool name and (clipped) args.</p>
+<p>3. Receiving the MCP toolset (what tools exist)</p>
+<h3>3.1 Built-in tools vs saved tools</h3>
+<p>In this codebase, MCP tools come from two sources:</p>
+<p>1. <strong>Built-in / static tools</strong> shipped with the server</p>
+<p>(example: generic OS query tool names like maximo.queryOS / maximo_queryOS)</p>
+<p>2. <strong>Saved tools (presets)</strong> persisted per tenant under the data directory</p>
+<p>- Stored as: mcp_tools_&lt;tenant&gt;.json (default /data)</p>
+<p>- Managed via the UI <strong>Tools</strong> page and server endpoints under /api/tools</p>
+<p>Saved tools typically act like <strong>named presets</strong> for OS queries (e.g. “Assets (BEDFORD)”), where the preset provides defaults (OS, select, where, orderBy, pageSize, lean), and callers can override via args.</p>
+<h3>3.2 Tool allowlisting (optional restriction)</h3>
+<p>The MCP Server supports an optional per-tenant allowlist:</p>
+<p>- File: enabled_tools_&lt;tenant&gt;.json</p>
+<p>- If present and non-empty, <strong>only</strong> tools in that list may be executed.</p>
+<p>- Calls to non-enabled tools return <strong>HTTP 403</strong> with { &quot;error&quot;: &quot;tool_disabled&quot;, &quot;name&quot;: &quot;&lt;tool&gt;&quot; }.</p>
+<p>4. Sending a message to Maximo (REST conversion)</p>
+<h3>4.1 Maximo base URL + authentication</h3>
+<p>Tenants are configured via:</p>
+<p>- TENANTS_JSON (preferred) or</p>
+<p>- MAXIMO_URL, MAXIMO_APIKEY (default tenant)</p>
+<p>The MCP Server builds the Maximo API base as:</p>
+<pre><code>{baseUrl}/maximo/api </code></pre>
+<p>Authentication header used:</p>
+<p>- apikey: &lt;MAXIMO_APIKEY&gt; (masked in logs when trace is enabled)</p>
+<h3>4.2 OS query tool behavior (<code>maximo.queryOS</code>)</h3>
+<p>For OS queries, the server:</p>
+<p>- Reads the requested OS from args.os</p>
+<p>- Applies <strong>friendly aliases</strong> (when enabled)</p>
+<p>- Applies <strong>MX → MXAPI aliasing</strong> (unless disabled), e.g. MXASSET → mxapiasset - Optionally checks an OS allowlist (persisted per tenant; best-effort)</p>
+<p>It then constructs a Maximo REST request to the relevant OS endpoint and forwards query parameters such as:</p>
+<p>- oslc.where</p>
+<p>- oslc.select</p>
+<p>- oslc.orderBy</p>
+<p>- oslc.pageSize</p>
+<p>- pageno (1-based)</p>
+<p>- lean=1 (if requested)</p>
+<p>5. Receiving a message from Maximo (response normalization)</p>
+<h3>5.1 Response handling and normalization</h3>
+<p>The server captures:</p>
+<p>- HTTP status</p>
+<p>- Timing (ms)</p>
+<p>- Request/response payload sizes (bytes)</p>
+<p>- A redacted response body (depending on trace/redaction settings)</p>
+<p>Responses may be returned in either:</p>
+<p>- <strong>Normalized form</strong> (default) — simplified payloads (often tabular for UI rendering) - <strong>Raw form</strong> — if args.rawResponse === true, the server returns Maximo JSON directly</p>
+<p>6. Sending a message back to the AI Agent (what the response looks like)</p>
+<p><code>The POST /mcp/call response is a JSON object representing the tool result.</code></p>
+<p>For OS queries, responses may include:</p>
+<p>- os — the resolved OS name used</p>
+<p>- renderHint — UI hint (e.g. &quot;grid&quot;)</p>
+<p>- table / columns / rows — normalized tabular data</p>
+<p>- Paging metadata: returnedCount, pageSize, page, hasMore, nextPage - Optionally totalCount (when available)</p>
+<p><strong>Example (simplified):</strong></p>
+<pre><code>{ </code></pre>
+<p>&quot;os&quot;: &quot;mxapiasset&quot;,</p>
+<p>&quot;renderHint&quot;: &quot;grid&quot;,</p>
+<p>&quot;columns&quot;: [&quot;assetnum&quot;, &quot;description&quot;, &quot;status&quot;],</p>
+<p>&quot;rows&quot;: [</p>
+<pre><code> { &quot;assetnum&quot;: &quot;PUMP-1001&quot;, &quot;description&quot;: &quot;Pump A&quot;, &quot;status&quot;: &quot;OPERATING&quot; }  ], </code></pre>
+<p>&quot;returnedCount&quot;: 1,</p>
+<p>&quot;pageSize&quot;: 50,</p>
+<p>&quot;page&quot;: 1,</p>
+<p>&quot;hasMore&quot;: false,</p>
+<p>&quot;nextPage&quot;: null</p>
+<p>}</p>
+<p>7. MCP Server UI – Functions &amp; Pages</p>
+<p>The MCP Server includes an <strong>Observability UI</strong> (Vite + React) under ./mcp-server/ui.</p>
+<h3>7.1 Login Screen</h3>
+<h3>7.2 Dashboard</h3>
+<p>Purpose:</p>
+<p>- Quick health view and summary metrics</p>
+<p>Typical items:</p>
+<p>- Recent activity and totals</p>
+<p>- Success vs error counts (based on logged events)</p>
+<h3>7.3 Tools</h3>
+<p>Purpose:</p>
+<p>- View and manage tools and saved presets</p>
+<p>Backed by endpoints:</p>
+<p><code>- GET /api/tools</code></p>
+<p><code>- POST /api/tools</code></p>
+<p><code>- PUT /api/tools/:name</code></p>
+<p><code>- DELETE /api/tools/:name</code></p>
+<p>Also supports tool enable/disable controls:</p>
+<p><code>- GET /api/enabled-tools</code></p>
+<p><code>- PUT /api/enabled-tools/:name</code></p>
+<h3>7.4 Logs</h3>
+<p>Purpose:</p>
+<p>- System-level and HTTP-level diagnostics</p>
+<p>Backed by:</p>
+<p><code>- GET /api/logs</code></p>
+<p><code>- GET /api/logs/:id</code></p>
+<p><code>- POST /api/logs/clear</code></p>
+<p>Note: when HTTP trace is disabled, large bodies/headers are not stored (they show as markers like <code>&quot;[httpTrace disabled]&quot;</code>).</p>
+<h3>7.5 Messages</h3>
+<p>Purpose:</p>
+<p>- Timeline view of MCP traffic (Agent ↔ MCP ↔ Maximo)</p>
+<p>Messages are derived from log events such as:</p>
+<p>- rx_agent / tx_agent</p>
+<p>- tx_maximo / rx_maximo</p>
+<h3>7.6 Trace</h3>
+<p>Purpose:</p>
+<p>- Control and inspect HTTP tracing behavior</p>
+<p>Backed by endpoints:</p>
+<p><code>- GET /api/trace</code></p>
+<p><code>- PUT /api/trace</code></p>
+<p>When enabled, the server captures additional HTTP request/response metadata.</p>
+<p>When disabled, the server keeps lightweight meta logs and avoids retaining large payloads.</p>
+<h3>7.7 Settings</h3>
+<p>Purpose:</p>
+<p>- View and manage tools and saved presets</p>
+<p>Backed by endpoints:</p>
+<p><code>- GET /api/tools</code></p>
+<p><code>- POST /api/tools</code></p>
+<p><code>- PUT /api/tools/:name</code></p>
+<p><code>- DELETE /api/tools/:name</code></p>
+<p>Also supports tool enable/disable controls:</p>
+<p><code>- GET /api/enabled-tools</code></p>
+<p><code>- PUT /api/enabled-tools/:name</code></p>
+<h3>7.8 Users</h3>
+<p>Purpose:</p>
+<p>- View and manage tools and saved presets</p>
+<p>Backed by endpoints:</p>
+<p><code>- GET /api/tools</code></p>
+<p><code>- POST /api/tools</code></p>
+<p><code>- PUT /api/tools/:name</code></p>
+<p><code>- DELETE /api/tools/:name</code></p>
+<p>Also supports tool enable/disable controls:</p>
+<p><code>- GET /api/enabled-tools</code></p>
+<p><code>- PUT /api/enabled-tools/:name</code></p>
+<p>AI Agent End User Guide</p>
+<h1>Quick Start</h1>
+<p>1. Open the AI Agent
+2. Log in
+3. Ask questions
+4. Use tools
+5. View results</p>
+<h1>Using the AI Agent</h1>
+<p>The AI Agent provides a chat interface for interacting with AI-powered assistants.</p>
+<h1>Help</h1>
+<p>Use the Help page for guidance and examples.</p>
+<h2>Login Screen (example)</h2>
+<h2>AI Agent UI (example)
+
+Chat Screen</h2>
+<h2>Settings Screens</h2>
+</div>

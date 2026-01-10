@@ -1,0 +1,261 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: maximo-ai-agent
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-internal-token
+  namespace: maximo-ai-agent
+type: Opaque
+stringData:
+  MCP_INTERNAL_TOKEN: REPLACE_ME
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: maximo-ai-agent-secrets
+  namespace: maximo-ai-agent
+type: Opaque
+data:
+  MISTRAL_BASE_URL: aHR0cHM6Ly9hcGkubWlzdHJhbC5haS92MQ==
+  DEFAULT_SITEID: QVRUUg==
+  MAXIMO_TENANT: ZGVmYXVsdA==
+  MCP_URL: aHR0cDovL21jcC1zZXJ2ZXI6ODA4MQ==
+  OPENAI_API_KEY: UkVQTEFDRV9NRQ==
+  MAXIMO_URL: aHR0cHM6Ly9zYWxtLm1hbmFnZS5zYWxtLmFwcHMubWFzOS56bmFwei5uZXQvbWF4aW1v
+  ENABLE_MCP_TOOLS: dHJ1ZQ==
+  MISTRAL_API_KEY: UkVQTEFDRV9NRQ==
+  MAXIMO_APIKEY: UkVQTEFDRV9NRQ==
+  TENANTS_JSON: ''
+  OPENAI_BASE: aHR0cHM6Ly9hcGkub3BlbmFpLmNvbQ==
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-providers
+  namespace: maximo-ai-agent
+type: Opaque
+data:
+  MISTRAL_BASE_URL: aHR0cHM6Ly9hcGkubWlzdHJhbC5haS92MQ==
+  ANTHROPIC_API_KEY: UkVQTEFDRV9NRQ==
+  WATSONX_API_KEY: UkVQTEFDRV9NRQ==
+  GEMINI_BASE_URL: aHR0cHM6Ly9nZW5lcmF0aXZlbGFuZ3VhZ2UuZ29vZ2xlYXBpcy5jb20vdjFiZXRh
+  OPENAI_API_KEY: UkVQTEFDRV9NRQ==
+  OPENAI_BASE_URL: aHR0cHM6Ly9hcGkub3BlbmFpLmNvbS92MQ==
+  WATSONX_PROJECT_ID: Li4u
+  GEMINI_API_KEY: UkVQTEFDRV9NRQ==
+  WATSONX_BASE_URL: aHR0cHM6Ly91cy1zb3V0aC5tbC5jbG91ZC5pYm0uY29t
+  ANTHROPIC_BASE_URL: aHR0cHM6Ly9hcGkuYW50aHJvcGljLmNvbQ==
+  MISTRAL_API_KEY: UkVQTEFDRV9NRQ==
+  DEEPSEEK_BASE_URL: aHR0cHM6Ly9hcGkuZGVlcHNlZWsuY29tL3Yx
+  DEEPSEEK_API_KEY: UkVQTEFDRV9NRQ==
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: maximo
+  namespace: maximo-ai-agent
+type: Opaque
+data:
+  DEFAULT_SITEID: QklLRVM=
+  DEFAULT_TENANT: c2FsbQ==
+  MAXIMO_APIKEY: UkVQTEFDRV9NRQ==
+  MAXIMO_URL: aHR0cHM6Ly9zYWxtLm1hbmFnZS5zYWxtLmFwcHMubWFzOS56bmFwei5uZXQvbWF4aW1v
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: maximo-ai-agent-data
+  namespace: maximo-ai-agent
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  volumeMode: Filesystem
+  storageClassName: managed-nfs-storage
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: maximo-ai-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: maximo-ai-agent
+      component: app
+  template:
+    metadata:
+      labels:
+        app: maximo-ai-agent
+        component: app
+    spec:
+      containers:
+      - name: app
+        image: image-registry.openshift-image-registry.svc:5000/maximo-ai-agent/app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: AUTH_SECRET
+          value: change-me-in-prod
+        - name: MCP_INTERNAL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mcp-internal-token
+              key: MCP_INTERNAL_TOKEN
+        - name: DEFAULT_ADMIN_PASSWORD
+          value: ReAtEt-wAInve-M0UsER
+        - name: COOKIE_SECURE
+          value: 'true'
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        envFrom:
+        - secretRef:
+            name: maximo-ai-agent-secrets
+        - secretRef:
+            name: ai-providers
+        - secretRef:
+            name: maximo
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: maximo-ai-agent-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  namespace: maximo-ai-agent
+spec:
+  selector:
+    app: maximo-ai-agent
+    component: app
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: app
+  namespace: maximo-ai-agent
+spec:
+  to:
+    kind: Service
+    name: app
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-server
+  namespace: maximo-ai-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: maximo-ai-agent
+      component: mcp-server
+  template:
+    metadata:
+      labels:
+        app: maximo-ai-agent
+        component: mcp-server
+    spec:
+      containers:
+      - name: mcp-server
+        image: image-registry.openshift-image-registry.svc:5000/maximo-ai-agent/mcp-server:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+          name: http
+        env:
+        - name: AUTH_SECRET
+          value: change-me-in-prod
+        - name: MCP_INTERNAL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mcp-internal-token
+              key: MCP_INTERNAL_TOKEN
+        - name: DEFAULT_ADMIN_PASSWORD
+          value: ReAtEt-wAInve-M0UsER
+        - name: COOKIE_SECURE
+          value: 'true'
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        envFrom:
+        - secretRef:
+            name: maximo-ai-agent-secrets
+        - secretRef:
+            name: ai-providers
+        - secretRef:
+            name: maximo
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: maximo-ai-agent-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-server
+  namespace: maximo-ai-agent
+spec:
+  selector:
+    app: maximo-ai-agent
+    component: mcp-server
+  ports:
+  - name: http
+    port: 8081
+    targetPort: 8081
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: mcp-server
+  namespace: maximo-ai-agent
+spec:
+  to:
+    kind: Service
+    name: mcp-server
+  port:
+    targetPort: http
+  tls:
+    termination: edge

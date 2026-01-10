@@ -1,0 +1,18 @@
+{
+  "name": "maximo-ai-agent-app",
+  "private": true,
+  "type": "module",
+  "version": "0.0.5",
+  "scripts": {
+    "dev": "node src/server.mjs",
+    "build": "npm --prefix ui install && npm --prefix ui run build",
+    "start": "node src/server.mjs"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "node-fetch": "^3.3.2",
+    "pdfkit": "^0.15.0"
+  }
+}

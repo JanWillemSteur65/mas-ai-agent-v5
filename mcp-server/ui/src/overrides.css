@@ -1,0 +1,295 @@
+/* =========================================================
+   Global layout consistency
+   ========================================================= */
+
+/* Prevent partial white pages */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Ensure main content always fills viewport */
+.bx--content,
+main {
+  min-height: 100vh;
+  background-color: var(--cds-background);
+}
+
+
+/* =========================================================
+   Header: always dark red background, white foreground
+   ========================================================= */
+
+.bx--header {
+  background-color: #8b0000 !important; /* dark red */
+}
+
+.bx--header,
+.bx--header * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.bx--header svg {
+  fill: #ffffff !important;
+}
+
+/* Keep hover states readable */
+.bx--header a:hover,
+.bx--header button:hover {
+  color: #ffffff !important;
+}
+
+
+/* =========================================================
+   Left navigation: always black background, white foreground
+   ========================================================= */
+
+.bx--side-nav,
+.bx--side-nav__navigation,
+.bx--side-nav__items {
+  background-color: #000000 !important;
+}
+
+.bx--side-nav,
+.bx--side-nav * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.bx--side-nav svg {
+  fill: #ffffff !important;
+}
+
+/* Active + hover states */
+.bx--side-nav a:hover,
+.bx--side-nav a:focus,
+.bx--side-nav__link--current {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+
+/* =========================================================
+   Prevent white panels inside dark pages
+   ========================================================= */
+
+.bx--tile,
+.bx--data-table-container,
+.bx--structured-list,
+.bx--modal-content {
+  background-color: var(--cds-layer) !important;
+}
+
+
+/* ================================
+   Fixed chrome colors (header + nav)
+   Always black background + white text, regardless of theme
+================================= */
+.cds--header {
+  background: #000 !important;
+  color: #fff !important;
+}
+.cds--header__name,
+.cds--header__name--prefix,
+.cds--header__global .cds--header__action,
+.cds--header__global .cds--header__action svg {
+  color: #fff !important;
+  fill: #fff !important;
+}
+
+.cds--side-nav,
+.cds--side-nav__navigation,
+.cds--side-nav__items {
+  background: #000 !important;
+}
+.cds--side-nav a,
+.cds--side-nav__link-text,
+.cds--side-nav__icon svg {
+  color: #fff !important;
+  fill: #fff !important;
+}
+.cds--side-nav a:hover {
+  background: rgba(255,255,255,0.08) !important;
+}
+.cds--side-nav__link--current {
+  background: rgba(255,255,255,0.14) !important;
+}
+
+/* ---- MAS-style Login ---- */
+.mx-login{
+  width: 100vw;
+  height: 100vh;
+  background: #0f1215;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+.mx-login__shell{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+}
+@media (max-width: 1056px){
+  .mx-login__shell{ grid-template-columns: 1fr; }
+  .mx-login__brand{ display: none; }
+}
+.mx-login__brand{
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 3.5rem;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(1200px 600px at 20% 40%, rgba(0, 99, 255, 0.35), rgba(0,0,0,0) 55%),
+    radial-gradient(900px 500px at 65% 30%, rgba(66, 213, 245, 0.18), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, #0b0d10 0%, #0f1215 70%);
+}
+.mx-login__brandInner{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mx-login__brandText{
+  max-width: 520px;
+}
+
+.mx-login__illustrationWrap{
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+.mx-login__suite{
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.mx-login__product{
+  margin-top: 0.75rem;
+  font-size: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.mx-login__tagline{
+  margin-top: 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+.mx-login__footerNote{
+  margin-top: 2rem;
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+.mx-login__panel{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #0f1215;
+}
+.mx-login__card{
+  width: min(520px, 92vw);
+  background: #161a1f;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.45);
+}
+.mx-login__title{
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.mx-login__subtitle{
+  margin: 0.35rem 0 0 0;
+  opacity: 0.75;
+}
+.mx-login__row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mx-login__hint{
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+.mx-login__loading{
+  opacity: 0.8;
+}
+
+/* Inputs inside the login card */
+.mx-login .cds--text-input,
+.mx-login .cds--password-input{
+  background: #0f1215;
+}
+.mx-login .cds--label{
+  color: rgba(255,255,255,0.85);
+}
+.mx-login .cds--btn--primary{
+  width: 100%;
+}
+
+
+
+/* --- MAS login fixes (contrast + illustration) --- */
+
+.mx-login__brand{ color: #fff; }
+.mx-login__brand .mx-login__suite,
+.mx-login__brand .mx-login__product,
+.mx-login__brand .mx-login__tagline,
+.mx-login__brand .mx-login__footerNote{ color: rgba(255,255,255,0.92); }
+.mx-login__brand code{
+  color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+}
+
+.mx-login input.cds--text-input{
+  color: rgba(255,255,255,0.92);
+  caret-color: rgba(255,255,255,0.92);
+}
+.mx-login input.cds--text-input::placeholder{
+  color: rgba(255,255,255,0.55);
+}
+.mx-login .cds--text-input:focus,
+.mx-login .cds--text-input:active{
+  outline: 2px solid rgba(0, 99, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.mx-login__illustration{
+  margin-top: 0;
+  width: min(780px, 100%);
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+/* Help modal */
+.mx-help-content{
+  max-height: 65vh;
+  overflow: auto;
+}
+.mx-help-content h1, .mx-help-content h2, .mx-help-content h3, .mx-help-content h4{
+  margin-top: 1rem;
+}
+.mx-help-content pre{
+  padding: 0.75rem;
+  overflow: auto;
+}
+.mx-help-content code{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}

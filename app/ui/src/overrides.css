@@ -1,0 +1,457 @@
+/* app/ui/src/overrides.css */
+
+/* ---- Theme colors ---- */
+:root{
+  --mx-app-header-bg: #000000; /* Fixed black */
+  --mx-header-fg: #ffffff;
+  --mx-nav-bg: #000000;
+  --mx-nav-border: #2a2a2a;
+}
+
+/* Full-screen layout */
+.mx-root { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+.mx-header {
+  background: var(--mx-app-header-bg) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  color: var(--mx-header-fg) !important;
+}
+.mx-header svg { fill: var(--mx-header-fg) !important; }
+
+/* Push body content below fixed Carbon Header (48px) */
+.mx-body { flex: 1; min-height: 0; display: flex; padding-top: 48px; }
+
+/* Fixed side nav wrapper */
+.mx-sidenav {
+  position: fixed;
+  top: 48px; /* sits right below header */
+  bottom: 0;
+  left: 0;
+  background: var(--mx-nav-bg);
+  border-right: 1px solid var(--mx-nav-border);
+  z-index: 5;
+}
+
+/* Main content should never go behind the fixed nav */
+.mx-content {
+  padding: 1rem !important;
+  min-height: 0;
+  width: 100%;
+  /* critical: allow pages like chat to size themselves and scroll internally */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Chat layout: fixed-height chat area, chips always visible */
+.mx-chat-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.mx-chat-toolbar { display:flex; gap:0.75rem; align-items:center; flex-wrap: wrap; flex: 0 0 auto; }
+
+/* The card becomes the fixed chat "window" that scrolls internally */
+.mx-chat-card {
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  display:flex;
+  flex-direction: column;
+
+  /* critical: keeps chat height bounded so the chips + prompt bar stay visible */
+  flex: 1;
+  min-height: 0;
+}
+
+.mx-chat-scroll {
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden; /* do not let tables expand the chat window */
+  padding: 0.75rem;
+}
+
+.mx-msg { margin-bottom: 0.9rem; max-width: 100%; }
+.mx-msg-head { display:flex; gap:0.5rem; align-items:center; flex-wrap: wrap; }
+.mx-msg-body { margin-top: 0.35rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Prompt bar with send + clear aligned right */
+.mx-promptbar {
+  display:flex;
+  gap:0.5rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-top: 1px solid rgba(0,0,0,0.12);
+  flex: 0 0 auto;
+}
+.mx-prompt { flex: 1; min-height: 44px; }
+.mx-prompt-actions { display:flex; gap:0.5rem; }
+
+/* Table rendering: keep tables inside chat width */
+.mx-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;  /* if too wide, scroll inside the message (not the page) */
+  overflow-y: hidden;
+  margin-top: 0.75rem;
+}
+
+/* Carbon DataTable can force min-width; clamp it */
+.mx-table-wrap .bx--data-table-container,
+.mx-table-wrap .bx--data-table,
+.mx-table-wrap table {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.mx-table-wrap table {
+  table-layout: fixed; /* prevent the table from blowing up the layout */
+}
+
+/* Header cell contains title + filter input */
+.mx-th { display:flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.mx-th-title { font-weight: 600; }
+
+/* Cells: crop long content to stay within the fixed-width table */
+.mx-table-wrap th,
+.mx-table-wrap td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chips */
+.mx-chips {
+  padding: 0.25rem 0.25rem 0.75rem 0.25rem;
+  flex: 0 0 auto;
+}
+.mx-chips-title { font-weight: 600; margin-bottom: 0.5rem; }
+.mx-chips-row { display:flex; gap: 0.5rem; flex-wrap: wrap; }
+.mx-chip { border-radius: 999px !important; }
+
+/* Light green special follow-up chips */
+.mx-chip-success.cds--btn {
+  background: rgba(66, 190, 101, 0.18) !important;
+  border-color: rgba(66, 190, 101, 0.35) !important;
+  color: rgba(15, 61, 15, 0.95) !important;
+}
+.mx-chip-success.cds--btn:hover {
+  background: rgba(66, 190, 101, 0.26) !important;
+}
+.mx-chip-success.cds--btn:disabled {
+  background: rgba(0,0,0,0.06) !important;
+  border-color: rgba(0,0,0,0.12) !important;
+  color: rgba(0,0,0,0.35) !important;
+}
+
+/* Pages */
+.mx-page { max-width: 1200px; }
+.mx-h2 { margin: 0 0 0.5rem 0; }
+.mx-h3 { margin: 0 0 0.5rem 0; }
+.mx-muted { opacity: 0.8; }
+.mx-card { border: 1px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 1rem; margin-top: 0.75rem; }
+.mx-form { display:grid; gap: 0.75rem; margin-top: 0.75rem; }
+
+/* Responsive tweaks */
+@media (max-width: 800px) {
+  .mx-content { padding: 0.75rem !important; }
+}
+
+
+/* Fixed black/white header + navigation (independent of page theme) */
+.mx-header,
+.mx-header .cds--header__name,
+.mx-header .cds--header__action,
+.mx-header .cds--header__action svg,
+.mx-header .cds--header__menu-trigger,
+.mx-header .cds--header__menu-trigger svg {
+  color: #fff !important;
+  fill: #fff !important;
+}
+
+.mx-sidenav-inner,
+.mx-sidenav-inner .cds--side-nav__navigation,
+.mx-sidenav-inner .cds--side-nav__items,
+.mx-sidenav-inner .cds--side-nav__menu,
+.mx-sidenav-inner .cds--side-nav__link {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+.mx-sidenav-inner .cds--side-nav__link-text,
+.mx-sidenav-inner .cds--side-nav__icon svg,
+.mx-sidenav-inner svg {
+  color: #fff !important;
+  fill: #fff !important;
+}
+
+.mx-sidenav-inner .cds--side-nav__divider {
+  border-color: #222 !important;
+}
+
+/* Settings modal: allow internal page to scroll without breaking layout */
+.mx-settings-modal .cds--modal-container {
+  max-height: 90vh;
+}
+.mx-settings-modal .cds--modal-content {
+  overflow: auto;
+  padding-bottom: 1rem;
+}
+
+
+/* Chat alignment: user messages on right, responses on left */
+.mx-msg { display:flex; flex-direction:column; }
+.mx-msg-user { align-items:flex-end; text-align:right; }
+.mx-msg-assistant { align-items:flex-start; text-align:left; }
+.mx-msg-user .mx-msg-head { justify-content:flex-end; }
+.mx-msg-user .mx-msg-body { background: rgba(15,98,254,0.08); padding:0.5rem 0.65rem; border-radius: 10px; }
+.mx-msg-assistant .mx-msg-body { background: rgba(0,0,0,0.04); padding:0.5rem 0.65rem; border-radius: 10px; }
+
+/* Avatar settings layout */
+.mx-ava-row{
+  display:grid;
+  grid-template-columns: 140px 1fr 42px;
+  gap: 0.5rem;
+  align-items:center;
+}
+.mx-ava-label{ font-weight: 600; }
+.mx-ava-preview{
+  width:32px;height:32px;border:1px solid rgba(0,0,0,0.18);
+  border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center;
+}
+.mx-ava-preview img{ width:80%; height:80%; object-fit:contain; }
+.mx-ava-fallback{
+  width:100%;height:100%; display:flex; align-items:center; justify-content:center;
+  font-size: 0.75rem;
+  background: rgba(15,98,254,0.15);
+}
+
+
+/* Chat avatars */
+.mx-msg-avatar{ width:28px; height:28px; border-radius:999px; object-fit:cover; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:600; background: rgba(0,0,0,0.08); }
+.mx-msg-avatar-fallback{ color: rgba(0,0,0,0.72); }
+.mx-msg-user .mx-msg-head .mx-msg-avatar{ margin-left: 0.25rem; }
+.mx-msg-assistant .mx-msg-head .mx-msg-avatar{ margin-right: 0.25rem; }
+
+/* Table action bar + report */
+.mx-table-actions{ display:flex; align-items:center; gap:0.5rem; margin: 0.25rem 0 0.5rem 0; flex-wrap:wrap; }
+.mx-th-open{ width: 56px; }
+.mx-report{ margin-top: 0.75rem; }
+.mx-report-head{ font-weight: 700; margin: 0.25rem 0 0.5rem 0; }
+.mx-report-grid{ display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.mx-report-top{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.5rem; margin-top: 0.5rem; }
+.mx-report-k{ font-size: 0.85rem; color: rgba(0,0,0,0.72); }
+.mx-report-v{ font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem; }
+.mx-report-small{ font-size: 0.85rem; }
+.mx-report-row{ display:flex; justify-content:space-between; gap: 0.5rem; padding: 0.125rem 0; }
+
+/* ---- MAS-style Login ---- */
+.mx-login{
+  width: 100vw;
+  height: 100vh;
+  background: #0f1215;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+.mx-login__shell{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+}
+@media (max-width: 1056px){
+  .mx-login__shell{ grid-template-columns: 1fr; }
+  .mx-login__brand{ display: none; }
+}
+.mx-login__brand{
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 3.5rem;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(1200px 600px at 20% 40%, rgba(0, 99, 255, 0.35), rgba(0,0,0,0) 55%),
+    radial-gradient(900px 500px at 65% 30%, rgba(66, 213, 245, 0.18), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, #0b0d10 0%, #0f1215 70%);
+}
+.mx-login__brandInner{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mx-login__brandText{
+  max-width: 520px;
+}
+
+.mx-login__illustrationWrap{
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+.mx-login__suite{
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.mx-login__product{
+  margin-top: 0.75rem;
+  font-size: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.mx-login__tagline{
+  margin-top: 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+.mx-login__footerNote{
+  margin-top: 2rem;
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+.mx-login__panel{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #0f1215;
+}
+.mx-login__card{
+  width: min(520px, 92vw);
+  background: #161a1f;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.45);
+}
+.mx-login__title{
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.mx-login__subtitle{
+  margin: 0.35rem 0 0 0;
+  opacity: 0.75;
+}
+.mx-login__row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mx-login__hint{
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+.mx-login__loading{
+  opacity: 0.8;
+}
+
+/* Inputs inside the login card */
+.mx-login .cds--text-input,
+.mx-login .cds--password-input{
+  background: #0f1215;
+}
+.mx-login .cds--label{
+  color: rgba(255,255,255,0.85);
+}
+.mx-login .cds--btn--primary{
+  width: 100%;
+}
+
+
+
+/* --- MAS login fixes (contrast + illustration) --- */
+
+.mx-login__brand{ color: #fff; }
+.mx-login__brand .mx-login__suite,
+.mx-login__brand .mx-login__product,
+.mx-login__brand .mx-login__tagline,
+.mx-login__brand .mx-login__footerNote{ color: rgba(255,255,255,0.92); }
+.mx-login__brand code{
+  color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+}
+
+.mx-login input.cds--text-input{
+  color: rgba(255,255,255,0.92);
+  caret-color: rgba(255,255,255,0.92);
+}
+.mx-login input.cds--text-input::placeholder{
+  color: rgba(255,255,255,0.55);
+}
+.mx-login .cds--text-input:focus,
+.mx-login .cds--text-input:active{
+  outline: 2px solid rgba(0, 99, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.mx-login__illustration{
+  margin-top: 0;
+  width: min(780px, 100%);
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+/* Help modal */
+.mx-help-content{
+  max-height: 65vh;
+  overflow: auto;
+}
+.mx-help-content h1, .mx-help-content h2, .mx-help-content h3, .mx-help-content h4{
+  margin-top: 1rem;
+}
+.mx-help-content pre{
+  padding: 0.75rem;
+  overflow: auto;
+}
+.mx-help-content code{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+
+/* Chat header toolbar alignment */
+.mx-chat-toolbar{ align-items: center; }
+.mx-chat-toolbar .cds--dropdown,
+.mx-chat-toolbar .cds--combo-box{ align-self: center; }
+.mx-chat-toolbar .cds--btn,
+.mx-chat-toolbar .cds--tag{ height: 2rem; display: inline-flex; align-items: center; }
+.mx-chat-toolbar .cds--dropdown__wrapper,
+.mx-chat-toolbar .cds--combo-box{ margin: 0; }
+.mx-chat-toolbar .cds--combo-box{ min-width: 14rem; }
+
+/* MCP toggle in chat header */
+.mx-mcp-toggle{ display:inline-flex; align-items:center; gap:0.4rem; height: 2rem; }
+.mx-mcp-label{ font-weight: 600; opacity: 0.85; }
+.mx-mcp-hint{ font-size: 0.75rem; opacity: 0.72; white-space: nowrap; }
+.mx-mcp-toggle .cds--toggle{ margin: 0; }
+.mx-mcp-toggle .cds--toggle__label{ margin: 0; }
+
+/* Send button spinner above the button */
+.mx-send-wrap{ position: relative; display: inline-flex; align-items: center; }
+.mx-sending{ position: absolute; left: 50%; transform: translateX(-50%); top: -1.35rem; }
+.mx-sending .cds--inline-loading__text{ display: none; }
+
+/* Keep prompt chips compact and consistent */
+.mx-chip.cds--btn{ height: 1.75rem; min-height: 1.75rem; padding-top: 0; padding-bottom: 0; }
+
+/* Debug blocks */
+.mx-debug > summary::-webkit-details-marker { display: none; }
+.mx-debug > summary::marker { display: none; }
+.mx-debug > summary { list-style: none; }
